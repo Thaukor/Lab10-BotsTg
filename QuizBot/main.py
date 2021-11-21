@@ -53,6 +53,8 @@ def poll_handler(update, context):
     options = update.poll.options
     option_1_vote = update.poll.options[0].voter_count
     """
+
+    global grade
     q_type = update.poll.type
     context.bot.send_message(
         chat_id = get_chat_id(update, context),
@@ -67,6 +69,7 @@ def poll_handler(update, context):
         is_correct = is_poll_answer_correct(ans, update)
     if is_correct:
         msg = 'Felicidades!'
+        grade += 1
     else:
         msg = 'oof'
 
@@ -82,7 +85,7 @@ def is_poll_answer_correct(ans, update):
     answers = update.poll.options
 
     for id in current_poll_correct:
-        if ans == answers[id]:
+        if ans == answers[id].text:
             return True
     
     return False
@@ -113,6 +116,7 @@ def poll_command_handler(update, context):
 def next_poll(update, context):
     global total_quiz_qa
     global total_poll_qa
+    global grade
 
     if total_quiz_qa > 0:
         add_quiz_question(update, context)
@@ -124,6 +128,13 @@ def next_poll(update, context):
         # Reset questions, show grade
         total_poll_qa = 2
         total_quiz_qa = 4
+
+        context.bot.send_message(
+            chat_id = get_chat_id(update, context),
+            text = '¡Terminaste de responder! Tu puntuación final fue de ' + str(grade)
+        )
+
+        grade = 1
         return False
 
     return True
