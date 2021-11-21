@@ -1,12 +1,13 @@
+from os import truncate
 from telegram.ext import Updater, CommandHandler, MessageHandler, PollHandler, Filters
 from telegram import Poll
-import requests
+import requests, random
 import re
 
 qa = [
-    ["P1", ['R1', 'R2', 'R3']],
-    ["P2", ['R1', 'R2', 'R3']],
-    ["P3", ['R1', 'R2', 'R3']],
+    ["P1", ['R1', 'R2', 'R3'], 1],
+    ["P2", ['R1', 'R2', 'R3'], 0],
+    ["P3", ['R1', 'R2', 'R3'], 2],
 ]
 
 # extract chat_id based on the incoming object
@@ -35,13 +36,36 @@ def poll_handler(update, context):
     question = update.poll.question
     correct_answer = update.poll.correct_option_id
 
-    option_1_text = update.poll.options[0].text
+    options = update.poll.options
     option_1_vote = update.poll.options[0].voter_count
 
     context.bot.send_message(
         chat_id = get_chat_id(update, context),
         text = 'Revisando respuesta...'
     )
+
+    ans = get_answer(update)
+
+    is_correct = is_answer_correct(ans, update)
+
+    if is_correct:
+        msg = 'Felicidades!'
+    else:
+        msg = 'oof'
+
+    context.bot.send_message(
+        chat_id = get_chat_id(update, context),
+        text = msg
+    )
+
+   
+def is_answer_correct(ans, update):
+    answers = update.poll.options
+
+    if ans == answers[update.poll.correct_option_id].text:
+        return True
+
+    return False
 
 def get_answer(update):
     answers = update.poll.options
@@ -60,7 +84,13 @@ def poll_command_handler(update, context):
     q = 'Test answer, correct ans is 1'
     a = ['A1', 'A2', 'A3']
 
-    msg = context.bot.send_poll(chat_id = c_id, question = q, options=a, type = Poll.QUIZ, correct_option_id=0)
+    _qa = random.choice(qa)
+
+    q = _qa[0]
+    a = _qa[1]
+    ca = _qa[2]
+
+    msg = context.bot.send_poll(chat_id = c_id, question = q, options=a, type = Poll.QUIZ, correct_option_id=ca)
     context.bot_data.update({msg.poll.id: msg.chat.id})
 
 def main_handler(update, context):
