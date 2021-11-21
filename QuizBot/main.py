@@ -23,12 +23,12 @@ def get_chat_id(update, context):
     return chat_id
 
 def help_command_handler(update, context):
-    msg = """Type /start to start the quiz. Type /help to display this screen"""
+    msg = """/start inicia el quiz.
+    /help muestra esta pantalla"""
     context.bot.send_message(
         chat_id = get_chat_id(update, context),
         text = msg
     )
-    pass
 
 def poll_handler(update, context):
 
@@ -37,6 +37,11 @@ def poll_handler(update, context):
 
     option_1_text = update.poll.options[0].text
     option_1_vote = update.poll.options[0].voter_count
+
+    context.bot.send_message(
+        chat_id = get_chat_id(update, context),
+        text = 'Revisando respuesta...'
+    )
 
 def get_answer(update):
     answers = update.poll.options
@@ -55,7 +60,8 @@ def poll_command_handler(update, context):
     q = 'Test answer, correct ans is 1'
     a = ['A1', 'A2', 'A3']
 
-    msg = context.bot.send_poll(chat_id = c_id, question = q, option=a, type = Poll.QUIZ, correct_option_id=0)
+    msg = context.bot.send_poll(chat_id = c_id, question = q, options=a, type = Poll.QUIZ, correct_option_id=0)
+    context.bot_data.update({msg.poll.id: msg.chat.id})
 
 def main_handler(update, context):
     pass
