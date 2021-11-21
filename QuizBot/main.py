@@ -10,6 +10,20 @@ qa = [
     ["P3", ['R1', 'R2', 'R3'], 2],
 ]
 
+# Multiple correct answers
+poll_qa = [
+    ["POLL 1", ['R1', 'R2', 'R3'], [0, 1]],
+    ["POLL 2", ['R1', 'R2', 'R3'], [0, 2]]
+]
+
+current_poll_correct = []
+
+total_quiz_qa = 4
+total_poll_qa = 2
+grade = 1
+# A random sample from qa, asked questions will be removed from here.
+tqa = []
+
 # extract chat_id based on the incoming object
 def get_chat_id(update, context):
     chat_id = -1
@@ -32,13 +46,14 @@ def help_command_handler(update, context):
     )
 
 def poll_handler(update, context):
-
+    """
     question = update.poll.question
     correct_answer = update.poll.correct_option_id
 
     options = update.poll.options
     option_1_vote = update.poll.options[0].voter_count
-
+    """
+    q_type = update.poll.type
     context.bot.send_message(
         chat_id = get_chat_id(update, context),
         text = 'Revisando respuesta...'
@@ -46,8 +61,10 @@ def poll_handler(update, context):
 
     ans = get_answer(update)
 
-    is_correct = is_answer_correct(ans, update)
-
+    if q_type == 'quiz':
+        is_correct = is_quizz_answer_correct(ans, update)
+    else:
+        is_correct = is_poll_answer_correct(ans, update)
     if is_correct:
         msg = 'Felicidades!'
     else:
@@ -58,8 +75,19 @@ def poll_handler(update, context):
         text = msg
     )
 
-   
-def is_answer_correct(ans, update):
+    next_poll(update, context)
+
+
+def is_poll_answer_correct(ans, update):
+    answers = update.poll.options
+
+    for id in current_poll_correct:
+        if ans == answers[id]:
+            return True
+    
+    return False
+
+def is_quizz_answer_correct(ans, update):
     answers = update.poll.options
 
     if ans == answers[update.poll.correct_option_id].text:
@@ -80,9 +108,28 @@ def get_answer(update):
     return ret
 
 def poll_command_handler(update, context):
+    next_poll(update, context)
+
+def next_poll(update, context):
+    global total_quiz_qa
+    global total_poll_qa
+
+    if total_quiz_qa > 0:
+        add_quiz_question(update, context)
+        total_quiz_qa -= 1
+    elif total_poll_qa > 0:
+        add_poll_question(update, context)
+        total_poll_qa -= 1
+    else:
+        # Reset questions, show grade
+        total_poll_qa = 2
+        total_quiz_qa = 4
+        return False
+
+    return True
+
+def add_quiz_question(update, context):
     c_id = get_chat_id(update, context)
-    q = 'Test answer, correct ans is 1'
-    a = ['A1', 'A2', 'A3']
 
     _qa = random.choice(qa)
 
@@ -91,6 +138,20 @@ def poll_command_handler(update, context):
     ca = _qa[2]
 
     msg = context.bot.send_poll(chat_id = c_id, question = q, options=a, type = Poll.QUIZ, correct_option_id=ca)
+    context.bot_data.update({msg.poll.id: msg.chat.id})
+
+def add_poll_question(update, context):
+    global current_poll_correct
+
+    c_id = get_chat_id(update, context)
+
+    _qa = random.choice(poll_qa)
+
+    q = _qa[0]
+    a = _qa[1]
+    current_poll_correct = _qa[2]
+
+    msg = context.bot.send_poll(chat_id = c_id, question = q, options=a, type = Poll.REGULAR)
     context.bot_data.update({msg.poll.id: msg.chat.id})
 
 def main_handler(update, context):
