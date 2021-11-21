@@ -14,6 +14,20 @@ qa = [
             'Añade todo, modifica commit antiguo, añade mensaje al antiguo',
             'Añade todo, crea nuevo commit basado en el anterior, combina mensaje del commit antiguo y el nuevo'
         ], 0
+    ],
+    ["¿En cuál hook es posible modificar el mensaje de un commit?", ['pre-commit', 'post-commit', 'commit-msg'], 2],
+    ["¿En cuál de los siguientes hooks es posible abortar un commit?", ['post-commit', 'update', 'pre-commit'], 2],
+    ["¿Cuál comando permite forzar un push sin sobreescribir commits de otras personas?", 
+        [
+            'git push --force-overwrite-self', 'git push --force --no-overwrite', 'git push --force-with-lease'
+        ], 2
+    ],
+    ["¿En qué caso es seguro un conflicto al realizar un merge de dos ramas?", 
+        [
+            'Siempre que modifiquen el mismo archivo',
+            'Cuando la rama contiene commits detrás y adelante de la rama a la cual se realiza el merge'
+            'Cuando se modifican las mismas lineas de un archivo'
+        ]
     ]
 ]
 
@@ -27,6 +41,13 @@ poll_qa = [
             'git add -f <archivo>',
             'No es posible sin eliminar la regla de .gitignore' 
         ], [0, 1]
+    ],
+    ["¿Cómo se puede añadir todos los cambios y archivos de una carpeta?", 
+        [
+            'git add <carpeta>/',
+            'git add --dir <carpeta>',
+            'git add <carpeta>/*'
+        ], [0, 2]
     ]
 ]
 
