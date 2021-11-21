@@ -5,15 +5,29 @@ import requests, random
 import re
 
 qa = [
-    ["P1", ['R1', 'R2', 'R3'], 1],
-    ["P2", ['R1', 'R2', 'R3'], 0],
-    ["P3", ['R1', 'R2', 'R3'], 2],
+    ["¿Cuál comando descarga los cambios del repositorio remoto y realiza un merge en el repo. local?", ['Clone', 'Fetch', 'Pull'], 2],
+    ["¿Qué comando añade todos los archivos nuevos/modificados y realiza un commit al mismo tiempo?", ['git commit add *', 'git commit -a', 'Ninguno'], 2],
+    ["¿Cuál opción permite modificar el último commit?", ['git commit --amend', 'git commit --fixup', 'No es posible'], 0],
+    ["¿Qué resultado tiene el siguiente commando? git add * && git commit --amend -m \"Olvidé colocar los archivos jaja\"", 
+        [
+            'Añade todo, modifica commit antiguo, sobreescribe mensaje',
+            'Añade todo, modifica commit antiguo, añade mensaje al antiguo',
+            'Añade todo, crea nuevo commit basado en el anterior, combina mensaje del commit antiguo y el nuevo'
+        ], 0
+    ]
 ]
 
 # Multiple correct answers
 poll_qa = [
-    ["POLL 1", ['R1', 'R2', 'R3'], [0, 1]],
-    ["POLL 2", ['R1', 'R2', 'R3'], [0, 2]]
+    ["¿Cuáles de los siguientes Github Actions puede cerrar un issue?", ['close', 'bugfix', 'resolved'], [0, 2]],
+    ["¿Cuál comando añade todos los archivos nuevos/modificados para un commit?", ['git add *', 'git add .', 'git add -A'], [0, 2]],
+    ["¿Cómo se puede ignorar una regla de .gitignore?", 
+        [
+            'Añadiendo un ! frente al archivo/directorio que se quiere incluir en .gitignore',
+            'git add -f <archivo>',
+            'No es posible sin eliminar la regla de .gitignore' 
+        ], [0, 1]
+    ]
 ]
 
 current_poll_correct = []
@@ -22,7 +36,10 @@ total_quiz_qa = 4
 total_poll_qa = 2
 grade = 1
 # A random sample from qa, asked questions will be removed from here.
-tqa = []
+tq_qa = []
+tp_qa = []
+
+is_polling = False
 
 # extract chat_id based on the incoming object
 def get_chat_id(update, context):
@@ -111,12 +128,24 @@ def get_answer(update):
     return ret
 
 def poll_command_handler(update, context):
-    next_poll(update, context)
+    global tp_qa
+    global tq_qa
 
+    if not is_polling:
+        tq_qa = random.sample(qa, 4)
+        tp_qa = random.sample(poll_qa, 2)
+
+        next_poll(update, context)
+    else:
+        context.bot.send_message(
+            chat_id = get_chat_id(update, context),
+            text = 'Ya hay un Quiz en proceso.'
+        )
 def next_poll(update, context):
     global total_quiz_qa
     global total_poll_qa
     global grade
+    global is_polling
 
     if total_quiz_qa > 0:
         add_quiz_question(update, context)
@@ -135,14 +164,18 @@ def next_poll(update, context):
         )
 
         grade = 1
+        is_polling = False
         return False
 
+    is_polling = True
     return True
 
 def add_quiz_question(update, context):
+    global tq_qa
     c_id = get_chat_id(update, context)
 
-    _qa = random.choice(qa)
+    _qa = random.choice(tq_qa)
+    tq_qa.remove(_qa)
 
     q = _qa[0]
     a = _qa[1]
@@ -153,10 +186,12 @@ def add_quiz_question(update, context):
 
 def add_poll_question(update, context):
     global current_poll_correct
+    global tp_qa
 
     c_id = get_chat_id(update, context)
 
-    _qa = random.choice(poll_qa)
+    _qa = random.choice(tp_qa)
+    tp_qa.remove(_qa)
 
     q = _qa[0]
     a = _qa[1]
